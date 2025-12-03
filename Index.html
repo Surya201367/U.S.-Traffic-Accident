@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>U.S. Traffic Accident Dashboard</title>
+
+  <!-- Chart.js for graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Leaflet.js for maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f4f4f4;
+    }
+    header {
+      background: #002b5c;
+      padding: 15px;
+      text-align: center;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .filters {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .filters label {
+      font-weight: bold;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-gap: 20px;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    #map {
+      height: 400px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  U.S. Traffic Accident Analysis Dashboard
+</header>
+
+<div class="container">
+
+  <!-- Filter Section -->
+  <div class="filters">
+    <h3>Submit Accident Report</h3>
+
+    <label>Location:</label><br>
+    <input type="text" id="location" placeholder="City, State"><br><br>
+
+    <label>Date & Time:</label><br>
+    <input type="datetime-local" id="datetime"><br><br>
+
+    <label>Severity:</label><br>
+    <select id="severity">
+      <option value="Low">Low</option>
+      <option value="Medium">Medium</option>
+      <option value="High">High</option>
+    </select><br><br>
+
+    <label>Message (optional):</label><br>
+    <textarea id="message" placeholder="Describe the accident"></textarea><br><br>
+
+    <button onclick="submitAccident()">Submit Accident Report</button>
+
+    <p id="response" style="color: green; font-weight: bold;"></p>
+  </div>
+
+  <!-- Dashboard Layout -->
+  <div class="dashboard-grid">
+
+    <div class="card">
+      <h3>Accidents by Time of Day</h3>
+      <canvas id="timeChart"></canvas>
+    </div>
+
+    <div class="card">
+      <h3>Weather Impact on Accidents</h3>
+      <canvas id="weatherChart"></canvas>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+      <h3>Accident Hotspots Map</h3>
+      <div id="map"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  // ================================
+  // SUBMIT ACCIDENT REPORT TO API
+  // ================================
+  function submitAccident() {
+
+    const data = {
+      location: document.getElementById("location").value,
+      datetime: document.getElementById("datetime").value,
+      severity: document.getElementById("severity").value,
+      message: document.getElementById("message").value
+    };
+
+    fetch("https://jyz79rtnyj.execute-api.us-east-1.amazonaws.com/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(result => {
+      document.getElementById("response").innerText =
+        "Submitted Successfully! Report ID: " + result.reportId;
+    })
+    .catch(err => {
+      document.getElementById("response").innerText =
+        "Error submitting report: " + err;
+    });
+  }
+
+  // ========================
+  // MAP
+  // ========================
+  var map = L.map('map').setView([37.0902, -95.7129], 4);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+  }).addTo(map);
+
+  L.marker([34.05, -118.24]).addTo(map).bindPopup("Los Angeles");
+  L.marker([40.71, -74.00]).addTo(map).bindPopup("New York");
+
+  // ========================
+  // CHART: Time
+  // ========================
+  new Chart(document.getElementById('timeChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Morning', 'Afternoon', 'Evening', 'Night'],
+      datasets: [{
+        label: 'Accidents',
+        data: [120, 200, 180, 90],
+        backgroundColor: ['#1e90ff', '#ff7f50', '#32cd32', '#8a2be2']
+      }]
+    }
+  });
+
+  // ========================
+  // CHART: Weather
+  // ========================
+  new Chart(document.getElementById('weatherChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Clear', 'Rain', 'Fog', 'Snow'],
+      datasets: [{
+        data: [300, 120, 40, 20],
+        backgroundColor: ['#ffd700', '#1e90ff', '#696969', '#add8e6']
+      }]
+    }
+  });
+
+</script>
+
+</body>
+</html>
